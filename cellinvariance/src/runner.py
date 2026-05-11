@@ -79,8 +79,45 @@ CELLFIND_ROOT    = Path(
 _LOCAL_CFG    = PROJECT_ROOT / "configs" / "rotation_domain_invariance.yaml"
 _CELLFIND_CFG = CELLFIND_ROOT / "configs" / "rotation_domain_invariance.yaml"
 
+# ---------------------------------------------------------------------------
+# Subject registry
+# ---------------------------------------------------------------------------
+# Each subject pins the filenames, in-vivo voxel size, and zstack channel
+# layout. Select with `CELLINVARIANCE_SUBJECT=<name>` (default: "sparrow").
+# Add a new subject by appending an entry here — no other edits required.
+SUBJECTS: dict[str, dict] = {
+    "sparrow": {
+        "zstack":                "zstack.tif",
+        "exvivo":                "Sparrow_3_po_488_4x-registered.tif",
+        "landmarks":             "slice3_to_invivoLANDMARKS.json",
+        "invivo_channel_1based": 2,            # 0 = no channel dim (3D zstack)
+        "invivo_voxel_dims_um":  (1.0, 1.0, 4.0),
+    },
+    "jy306": {
+        "zstack":                "JY306_in_Vivo_stack_flipped_s80.tif",
+        "exvivo":                "stitched_gfp_fullres_v5_1um_isotropic.tif",
+        "landmarks":             "jy306_landmarks.json",
+        "invivo_channel_1based": 0,            # zstack is plain (Z, Y, X)
+        "invivo_voxel_dims_um":  (0.6835, 0.6835, 3.0),
+    },
+}
+
+SUBJECT = os.environ.get("CELLINVARIANCE_SUBJECT", "sparrow").lower()
+if SUBJECT not in SUBJECTS:
+    raise RuntimeError(
+        f"Unknown CELLINVARIANCE_SUBJECT={SUBJECT!r}; choose from {sorted(SUBJECTS)}"
+    )
+_SUBJ_CFG = SUBJECTS[SUBJECT]
+
+
 def _resolve_dataset_dir() -> Path:
-    # Explicit env var wins over everything.
+    """Resolve the data directory for the current subject.
+
+    Precedence:
+      1. ``CELLINVARIANCE_DATA_DIR`` env var (explicit override, used verbatim).
+      2. ``<project_root>/<config dataset_dir>/<subject>``.
+      3. ``<project_root>/data/<subject>``.
+    """
     env_dir = os.environ.get("CELLINVARIANCE_DATA_DIR")
     if env_dir:
         return Path(env_dir).expanduser().resolve()
@@ -91,19 +128,18 @@ def _resolve_dataset_dir() -> Path:
         _cfg = yaml.safe_load(cfg_path.read_text())
         raw = Path(_cfg["dataset"]["dataset_dir"])
     except Exception as _e:
-        print(f"[warn] Config fallback ({_e}): defaulting to {PROJECT_ROOT / 'data'}")
-        return PROJECT_ROOT / "data"
+        print(f"[warn] Config fallback ({_e}): defaulting to {PROJECT_ROOT / 'data' / SUBJECT}")
+        return PROJECT_ROOT / "data" / SUBJECT
 
-    # Relative paths are resolved against the project root so the config can
-    # ship with `./data` and stay portable.
     if not raw.is_absolute():
         raw = (PROJECT_ROOT / raw).resolve()
-    return raw
+    return raw / SUBJECT
+
 
 DATASET_DIR    = _resolve_dataset_dir()
-ZSTACK_PATH    = DATASET_DIR / "zstack.tif"
-EXVIVO_PATH    = DATASET_DIR / "Sparrow_3_po_488_4x-registered.tif"
-LANDMARKS_PATH = DATASET_DIR / "slice3_to_invivoLANDMARKS.json"
+ZSTACK_PATH    = DATASET_DIR / _SUBJ_CFG["zstack"]
+EXVIVO_PATH    = DATASET_DIR / _SUBJ_CFG["exvivo"]
+LANDMARKS_PATH = DATASET_DIR / _SUBJ_CFG["landmarks"]
 
 # Caches and per-run artifacts live under .feature_cache/ at the project root
 # (gitignored). Override with CELLINVARIANCE_CACHE_DIR if you need a different
@@ -123,8 +159,8 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 # ---------------------------------------------------------------------------
 
 DINO_MODEL_ID         = "facebook/dinov3-vitl16-pretrain-lvd1689m"
-INVIVO_CHANNEL_1BASED = 2
-INVIVO_VOXEL_DIMS_UM  = (1.0, 1.0, 4.0)
+INVIVO_CHANNEL_1BASED = _SUBJ_CFG["invivo_channel_1based"]
+INVIVO_VOXEL_DIMS_UM  = _SUBJ_CFG["invivo_voxel_dims_um"]
 ORBIT_ANGLES_DEG      = tuple(range(0, 360, 15))
 BATCH_SIZE            = 8
 PAD_VALUE             = 0.0
@@ -337,9 +373,18 @@ def load_volumes():
     """Load in-vivo and ex-vivo volumes."""
     log("Loading volumes…")
     zs = tifffile.imread(str(ZSTACK_PATH)).astype(np.float32)
-    if zs.ndim != 4:
-        raise RuntimeError(f"Expected (Z,C,Y,X), got {zs.shape}")
-    iv = zs[:, INVIVO_CHANNEL_1BASED - 1, :, :]
+    if INVIVO_CHANNEL_1BASED > 0:
+        if zs.ndim != 4:
+            raise RuntimeError(
+                f"Expected (Z,C,Y,X) when invivo_channel_1based={INVIVO_CHANNEL_1BASED}, got {zs.shape}"
+            )
+        iv = zs[:, INVIVO_CHANNEL_1BASED - 1, :, :]
+    else:
+        if zs.ndim != 3:
+            raise RuntimeError(
+                f"Expected (Z,Y,X) when invivo_channel_1based=0, got {zs.shape}"
+            )
+        iv = zs
     ex = tifffile.imread(str(EXVIVO_PATH)).astype(np.float32)
     if ex.ndim == 2:
         ex = ex[None]
