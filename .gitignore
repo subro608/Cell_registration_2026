@@ -1,0 +1,71 @@
+# Track only .py files and the memory/ directory.
+# Everything else is ignored to keep big data + binaries out.
+
+# Ignore by extension (data, media, model checkpoints, etc.)
+*.pkl
+*.tif
+*.tiff
+*.npz
+*.npy
+*.mp4
+*.avi
+*.mov
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
+*.csv
+*.tsv
+*.json
+*.html
+*.bin
+*.h5
+*.hdf5
+*.zarr
+*.zip
+*.tar
+*.gz
+*.bz2
+*.7z
+*.exr
+*.nrrd
+*.nii
+*.nii.gz
+*.nwb
+*.parquet
+*.feather
+
+# Python / env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env
+.uv/
+uv.lock
+.python-version
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tooling / harness
+.claude/
+slurm_logs/
+*.out
+*.err
+*.log

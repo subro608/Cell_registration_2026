@@ -1,0 +1,47 @@
+- [Margaret Project Overview](project_overview.md) — Multimodal cell-matching pipeline: in-vivo + MERSCOPE + behaviour for mouse JY306/JY316 hippocampus
+- [Nature Science Videos](project_goal_nature_videos.md) — Erdem's 4-step directive (NOT DONE), stitching done (elastix 1µm isotropic), 3D HTML viewer, next: seed points
+- [Registration Video Data](project_registration_video.md) — All files, transforms, landmarks (2D+3D), coordinate spaces, 3D alignment attempts
+- [Cell Segmentations](project_segmentations.md) — 17 ex-vivo regions (899 cells), 6 behaviour masks (256 cells), native combined seg (44 cells)
+- [Coordinate Space Pitfalls](project_coord_pitfalls.md) — exvivo_total is labels not intensity, JY306 vs JY316, dtype gotchas
+- [Semi VIA+Claude Masking](project_semi_via_claude_masking.md) — V4 CSV-based masks (21 tiles), v4 pipeline scripts, annotated QC on all z-slices
+- [Landmark-based Alignment](project_landmark_alignment.md) — Interactive GUI for cell-level alignment: click matching cells in adjacent slices
+- [User Profile](user_neurolab.md) — Neuroscience researcher, napari/Python/cv2, Nature Science pub, iterative visual verification
+- [CV2 and Animation Feedback](feedback_cv2_tips.md) — Use proper warpAffine, float32 maps, verify all z-slices with overlays
+- [Mask Generation Feedback](feedback_masks.md) — Always use CSV annotations for masks, never auto-threshold from images
+- [3D Viewer Build Params](feedback_3d_viewer_build.md) — Normalize by /4000 not /p99, subsample not average, y-flip, object rotation, defaults
+- [MERSCOPE Transforms](project_merscope_transforms.md) — 12 pkls (rows 1-3, NOT row4/5), pcd both in JY306 space, transformed[:H,:W] maps 1:1 to JY306 coords
+- [In-Vivo → Ex-Vivo Pipeline](project_invivo_to_exvivo_pipeline.md) — Steps 1-3 DONE (inverse pkl, 3D affine, elastix), Step4 pending (animate), viewer DEPLOYED
+- [Key Scripts](reference_scripts.md) — collage v5, alignment v4, 3D viewer builders (GP equalized, RBF, gapfree, copy)
+- [Generated Output Locations](reference_outputs.md) — PNG exports, 3D viewers, stitched volumes, MERSCOPE transform pkls
+- [Coordinate Spaces Full Map](project_coord_spaces.md) — All 4 spaces (nd2 native, JY306 master, MERSCOPE, stitched 1µm), pixel sizes, transform chains
+- [nd2↔MERSCOPE↔JY306 Pipeline](project_nd2_merscope_pipeline.md) — Correct 3-space chain, SIFT affine (ECC failed 9/12), iterative pkl inverse, ~13px accuracy
+- [Contact Sheet Verification](project_contact_sheet_verification.md) — MIP±2 shared with Cliodna/Jason 2026-03-29, stitched_v5 contact sheets also generated
+- [Stitched V5 Pipeline](project_stitched_v5.md) — Full-res elastix stitching, landmark propagation, stitched contact sheets
+- [Dual 3D Viewer Versions](project_dual_3d_viewer.md) — v2-v5 viewers, v5 LATEST: per-volume scaling, centroid alignment, depth-coded MIP, 4x ex-vivo scale
+- [Comms Style](feedback_comms_style.md) — Keep Slack messages to collaborators simple, no technical pipeline details
+- [Per-Tile Registration Pipeline](project_2d_affine_z_matching.md) — 3D affine + TPS+IRLS, v4 viewer (filtered/all toggle), 17 tiles (row3_1/3_5 excluded), 786 landmarks
+- [Save Transforms With Outputs](feedback_save_transforms.md) — Always save affine/transform .npz in same folder as contact sheet outputs
+- [In-vivo Display No Threshold](feedback_invivo_display.md) — Raw invivo for display, median filter only for elastix registration
+- [Calcium Movie Registration](project_calcium_movie.md) — movie_rolling_avg (663fr, 512x512), flip YX, SIFT to JY306 z=3 (NCC=0.75), warped MP4, v3 viewer with per-landmark patch videos
+- [JY306 MERSCOPE Data](project_merscope_jy306_data.md) — 3.28M transcripts CSV, micron_to_mosaic transform (0.108µm/px), merscope_exvivo PKLs (purely affine, <3px offset), exvivo_merscope_combined ch0=GFP ch1=DAPI
+- [PKL Direct Registration](project_pkl_direct_registration.md) — All 19 tiles via pkl deformation field, 878 lm (401 pass), per-tile 2D affine transforms, includes row3_1/3_5
+- [Vercel Deploy Workflow](feedback_vercel_deploy.md) — Preview with `vercel` CLI first, push to main only after approval; check all iframed HTMLs are committed
+- [Animation Screenplay v1.4](project_animation_screenplay.md) — Combined script 1-3-5, scene7 4 cells (1565fr), 6x middle-tile speedup, axis widgets
+- [MERSCOPE Overlay Pipeline](project_merscope_overlay.md) — MERFISH→exvivo transform: microns→mosaic→fliplr→zoom(0.108)→PKL affine inverse→nd2 scale. 22 regions at 4200×4200
+- [Landmark Patches PKL Direct](project_landmark_patches_pkl_direct.md) — 5-panel QC HTML + 4-panel genedot contact sheets (IV-zoom/IV-warp/EV/EV+genedots), 19 tiles, ~340 candidates
+- [Animation Flow Feedback](feedback_animation_flow.md) — No going backwards, one rotation loop per volume, smooth forward momentum, tile grid→stack→rotate for 5b
+- [Animation Feedback v2](feedback_animation_flow_v2.md) — Static angle, real tile merge, MERSCOPE dots, correct z-depth transition, scene7 no zoom-out
+- [Overlay Colors](feedback_overlay_colors.md) — In-vivo=green, ex-vivo=magenta (Jason). Applies to 3D clouds, labels, patches, ALL viewers
+- [No Assumptions](feedback_no_assumptions.md) — Nature Science pub: every value from real data, no arbitrary constants or guesses
+- [Via Masks for Video](project_via_masks_for_video.md) — V4 binary masks (21 tiles, 4200×4200) for scene5b stacked view tissue boundaries
+- [Scale Bars](project_scale_bars.md) — All scenes including 5b. Post-processed via add_scale_bars_5b.py. Per-phase µm/disp_px.
+- [Scene Transitions](feedback_scene_transitions.md) — No blackouts between scenes; each scene starts matching previous scene's last frame
+- [Anatomical Axes](project_anatomical_axes.md) — Z=DV (high conf), X=ML Y=AP (predicted, pending Jason). Scene7 v5: 5 cells, MERSCOPE volume, axis widget
+- [Tile Anatomy](project_tile_anatomy.md) — Row1→5 = dorsal→ventral, oriens→pyramidale. M/L/A/P orientation per tile. Pyramidale ring from row3_5
+- [Ex-Vivo Normalization](project_exvivo_normalization.md) — Per-tile p99 normalization (target 243). Ventral tiles boosted 1.25-1.71x for visible pyramidale ring
+- [3D Axis Widget](project_axis_widget.md) — AP/ML/DV trident on all 3D scenes. ML=red, AP=dark, DV=blue. Rotates with volume
+- [MERSCOPE Gene Colors](project_merscope_gene_colors.md) — 550 rainbow HSV, must use most_common() ranking, BGR storage, RGB only at output
+- [Scene 5b Pipeline v2](project_scene5b_pipeline_v2.md) — Per-tile channels, rotation blends, no stitched intermediate, 1083 frames combined
+- [Caption Conventions](feedback_caption_conventions.md) — No hyphens (IN VIVO not IN-VIVO), no confocal with in vivo, MERSCOPE mRNA not gene
+- [4-Modality Viewer](project_4modality_viewer.md) — 2×2 grid: 878 lm, color-fixed (magenta/green), row2_1 fallback, MERSCOPE most_common, patch order CALCIUM|IV|EV|MS
+- [Twitter Showcase Pipeline](project_twitter_showcase.md) — build_twitter_final.py: tissue GIF + static overlay + 3-cell grid for Jason's Twitter post
