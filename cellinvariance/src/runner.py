@@ -92,6 +92,13 @@ SUBJECTS: dict[str, dict] = {
         "landmarks":             "slice3_to_invivoLANDMARKS.json",
         "invivo_channel_1based": 2,            # 0 = no channel dim (3D zstack)
         "invivo_voxel_dims_um":  (1.0, 1.0, 4.0),
+        # Patch extents in µm. Base z=24 µm is the w8 default; the three
+        # multiscale ones widen and narrow around it. Sparrow has plenty of
+        # z-depth (>250 µm volume) so the full 12/24/36 set fits.
+        "patch_xy_um":           80,
+        "patch_z_um":            24,
+        "multiscale_xy_ums":     (40, 80, 120),
+        "multiscale_z_ums":      (12, 24, 36),
     },
     "jy306": {
         "zstack":                "JY306_in_Vivo_stack_flipped_s80.tif",
@@ -99,6 +106,14 @@ SUBJECTS: dict[str, dict] = {
         "landmarks":             "jy306_landmarks.json",
         "invivo_channel_1based": 0,            # zstack is plain (Z, Y, X)
         "invivo_voxel_dims_um":  (0.6835, 0.6835, 3.0),
+        # JY306 in-vivo stack is only 16 z-slices × 3 µm = 48 µm deep, so
+        # the w8 (12, 24, 36) µm scales don't fit. We mirror Sparrow's
+        # (0.5x, 1x, 1.5x of base) pattern at a smaller base. Contrastive
+        # enforces a >=8 µm floor on every multiscale z value.
+        "patch_xy_um":           80,
+        "patch_z_um":            16,
+        "multiscale_xy_ums":     (40, 80, 120),
+        "multiscale_z_ums":      (8, 16, 24),
     },
 }
 
@@ -369,6 +384,21 @@ def load_landmarks():
     out.sort(key=lambda d: natural_key(d["id"]))
     return out
 
+def _read_volume_tiff(path) -> np.ndarray:
+    """Robust multi-page TIFF read as a 3D (or higher) volume.
+
+    ``tifffile.imread`` returns only page 0 on BigTIFFs that lack ImageJ
+    series metadata (e.g. our stitched JY306 ex-vivo, which has 516 pages
+    but reports a single (Y, X) "series"). Stack the pages explicitly when
+    there are more than one to recover the Z axis.
+    """
+    with tifffile.TiffFile(str(path)) as t:
+        if len(t.pages) > 1:
+            return np.stack([p.asarray() for p in t.pages]).astype(np.float32)
+        arr = t.pages[0].asarray().astype(np.float32)
+        return arr[None] if arr.ndim == 2 else arr
+
+
 def load_volumes():
     """Load in-vivo and ex-vivo volumes."""
     log("Loading volumes…")
@@ -385,9 +415,7 @@ def load_volumes():
                 f"Expected (Z,Y,X) when invivo_channel_1based=0, got {zs.shape}"
             )
         iv = zs
-    ex = tifffile.imread(str(EXVIVO_PATH)).astype(np.float32)
-    if ex.ndim == 2:
-        ex = ex[None]
+    ex = _read_volume_tiff(EXVIVO_PATH)
     log(f"  in-vivo: {iv.shape}  ex-vivo: {ex.shape}")
     return iv, ex
 
